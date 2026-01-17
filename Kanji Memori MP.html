@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanji-Hiragana Memori</title>
+    <style>
+        /* CSS untuk tampilan game */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px; /* Tambahkan padding agar tidak menempel di tepi layar */
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px; /* Batasi lebar maksimum untuk layar besar */
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em; /* Ukuran font yang lebih fleksibel */
+        }
+
+        /* Style untuk Timer */
+        #timer-display {
+            font-size: 1.5em;
+            color: #555;
+            margin-bottom: 20px;
+            font-weight: bold;
+            transition: color 0.5s;
+        }
+
+        /* Warna peringatan saat waktu tinggal 10 detik */
+        #timer-display.warning {
+            color: #d32f2f; /* Merah */
+        }
+
+        .game-board {
+            display: grid;
+            /* Grid 4 kolom dengan lebar yang sama */
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px; /* Jarak antar kartu */
+            margin: auto;
+            perspective: 1000px; /* Untuk efek 3D pada kartu */
+        }
+
+        .card {
+            position: relative;
+            /* Ukuran kartu untuk desktop */
+            width: 100px;
+            height: 100px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transform: scale(1);
+            transition: transform 0.5s;
+        }
+
+        .card.flip {
+            transform: rotateY(180deg);
+        }
+        
+        .card:active {
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            border-radius: 5px;
+            background: #fff;
+            backface-visibility: hidden; /* Menyembunyikan bagian belakang elemen */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .card-front {
+            background-color: #2196F3;
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        /* Perbedaan warna untuk kartu belakang */
+        .card-back[data-type="kanji"] {
+            background-color: #90CAF9; /* Warna biru muda untuk kartu Kanji */
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .card-back[data-type="hiragana"] {
+            background-color: #90CAF9; /* Warna hijau muda untuk kartu Hiragana */
+            color: #333;
+            font-size: 1.5em;
+        }
+        
+        /* Style untuk pesan Kemenangan dan Kekalahan */
+        .game-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-align: center;
+            width: 90%; /* Lebar responsif untuk pesan */
+            max-width: 400px;
+        }
+
+        .win-message h2 {
+            color: #4CAF50;
+        }
+
+        .lose-message h2 {
+            color: #d32f2f; /* Merah */
+        }
+
+        .game-message p {
+            font-size: 1.2em;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .game-message button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        /* --- MEDIA QUERY UNTUK MOBILE --- */
+        /* Berlaku untuk layar dengan lebar maksimal 600px */
+        @media (max-width: 600px) {
+            body {
+                padding: 5px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 5px;
+            }
+
+            #timer-display {
+                font-size: 1.2em;
+                margin-bottom: 15px;
+            }
+
+            .game-board {
+                gap: 8px; /* Kurangi jarak antar kartu */
+            }
+
+            .card {
+                /* Gunakan unit vw (viewport width) untuk ukuran kartu yang responsif */
+                width: 22vw;
+                height: 22vw;
+                max-width: 90px; /* Batasi ukuran maksimum agar tidak terlalu besar */
+                max-height: 90px;
+            }
+            
+            .card-front, .card-back {
+                padding: 10px; /* Kurangi padding di dalam kartu */
+            }
+
+            .card-front {
+                font-size: 2em; /* Sesuaikan ukuran font */
+            }
+
+            .card-back {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Kanji Memori Mr.DJ</h1>
+        <div id="timer-display">03:00</div>
+        <div class="game-board">
+            <!-- Kartu-kartu akan dibuat oleh JavaScript -->
+        </div>
+    </div>
+
+    <!-- Pesan Kemenangan -->
+    <div class="game-message win-message" id="winMessage">
+        <h2>Selamat! Anda Menang!</h2>
+        <p id="win-time">Waktu Tersisa: 03:00</p>
+        <button onclick="resetGame()">Main Lagi</button>
+    </div>
+
+    <!-- Pesan Kekalahan -->
+    <div class="game-message lose-message" id="loseMessage">
+        <h2>Waktu Habis!</h2>
+        <p>Coba lagi untuk menyelesaikan tantangannya.</p>
+        <button onclick="resetGame()">Coba Lagi</button>
+    </div>
+
+    <script>
+        // JavaScript untuk logika game
+
+        // Data pasangan Kanji dan Hiragana
+        const kanjiHiraganaPairs = [
+            { kanji: '雨', hiragana: 'やま' },
+            { kanji: '春', hiragana: 'はる' },
+            { kanji: '秋', hiragana: 'あき' },
+            { kanji: '夏', hiragana: 'なつ' },
+            { kanji: '雪', hiragana: 'ゆき' },
+            { kanji: '冬', hiragana: 'ふゆ' },
+            { kanji: '朝', hiragana: 'あさ' },
+            { kanji: '夜', hiragana: 'よる' },
+            { kanji: '時', hiragana: 'とき' },
+            { kanji: '今日', hiragana: 'きょう' },
+            { kanji: '昨日', hiragana: 'きのう' },
+            { kanji: '明日', hiragana: 'あした' }
+        ];
+
+        const gameBoard = document.querySelector('.game-board');
+        const winMessage = document.getElementById('winMessage');
+        const loseMessage = document.getElementById('loseMessage');
+        const winTimeDisplay = document.getElementById('win-time');
+        const timerDisplay = document.getElementById('timer-display');
+
+        let cards = [];
+        let hasFlippedCard = false;
+        let lockBoard = false;
+        let firstCard, secondCard;
+
+        // --- Variabel untuk Timer Mundur ---
+        const countdownTime = 180; // Waktu dalam detik (3 menit)
+        let timeRemaining = countdownTime;
+        let timerInterval = null;
+        let gameStarted = false;
+
+        // --- Fungsi-fungsi Timer ---
+        function startTimer() {
+            gameStarted = true;
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+
+                // Berikan peringatan saat waktu tinggal 10 detik
+                if (timeRemaining <= 10) {
+                    timerDisplay.classList.add('warning');
+                }
+
+                // Hentikan game jika waktu habis
+                if (timeRemaining <= 0) {
+                    stopTimer();
+                    handleGameOver();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Fungsi untuk membuat kartu
+        function createCard(cardData) {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.pairId = cardData.pairId;
+
+            const cardFront = document.createElement('div');
+            cardFront.classList.add('card-front');
+            cardFront.textContent = cardData.content;
+
+            const cardBack = document.createElement('div');
+            cardBack.classList.add('card-back');
+            cardBack.dataset.type = cardData.type;
+            cardBack.textContent = '?';
+
+            card.appendChild(cardFront);
+            card.appendChild(cardBack);
+
+            card.addEventListener('click', flipCard);
+            return card;
+        }
+
+        // Fungsi untuk mengacak array (Fisher-Yates Shuffle)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Fungsi untuk memulai atau mereset game
+        function startGame() {
+            gameBoard.innerHTML = '';
+            cards = [];
+            hasFlippedCard = false;
+            lockBoard = false;
+            firstCard = null;
+            secondCard = null;
+            winMessage.style.display = 'none';
+            loseMessage.style.display = 'none';
+
+            // --- Reset Timer Mundur ---
+            stopTimer();
+            timeRemaining = countdownTime;
+            gameStarted = false;
+            updateTimerDisplay();
+            timerDisplay.classList.remove('warning'); // Hapus kelas peringatan
+
+            // Buat array data untuk semua kartu
+            let gameCardsData = [];
+            kanjiHiraganaPairs.forEach((pair, index) => {
+                gameCardsData.push({ content: pair.kanji, pairId: index, type: 'kanji' });
+                gameCardsData.push({ content: pair.hiragana, pairId: index, type: 'hiragana' });
+            });
+
+            shuffle(gameCardsData);
+
+            gameCardsData.forEach(data => {
+                const card = createCard(data);
+                cards.push(card);
+                gameBoard.appendChild(card);
+            });
+        }
+
+        // Fungsi untuk membalik kartu
+        function flipCard() {
+            if (!gameStarted) {
+                startTimer();
+            }
+
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            this.classList.add('flip');
+
+            if (!hasFlippedCard) {
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+
+            secondCard = this;
+            checkForMatch();
+        }
+
+        // Fungsi untuk memeriksa apakah dua kartu cocok
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.pairId === secondCard.dataset.pairId;
+            isMatch ? disableCards() : unflipCards();
+        }
+
+        // Fungsi untuk menonaktifkan kartu yang cocok
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            resetBoard();
+            checkWin();
+        }
+
+        // Fungsi untuk membalik kembali kartu yang tidak cocok
+        function unflipCards() {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove('flip');
+                secondCard.classList.remove('flip');
+                resetBoard();
+            }, 1000);
+        }
+
+        // Fungsi untuk mereset kondisi papan setelah satu putaran
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        // Fungsi untuk memeriksa kondisi kemenangan
+        function checkWin() {
+            const totalPairs = kanjiHiraganaPairs.length;
+            const flippedCardsCount = document.querySelectorAll('.card.flip').length;
+            if (flippedCardsCount === totalPairs * 2) {
+                setTimeout(() => {
+                    stopTimer();
+                    winTimeDisplay.textContent = `Waktu Tersisa: ${timerDisplay.textContent}`;
+                    winMessage.style.display = 'block';
+                }, 500);
+            }
+        }
+        
+        // Fungsi untuk menangani game over (waktu habis)
+        function handleGameOver() {
+            // Nonaktifkan semua kartu yang belum terbuka
+            cards.forEach(card => {
+                if (!card.classList.contains('flip')) {
+                    card.removeEventListener('click', flipCard);
+                    // Berikan efek visual bahwa kartu dinonaktifkan
+                    card.style.opacity = '0.5';
+                }
+            });
+            loseMessage.style.display = 'block';
+        }
+
+        // Fungsi untuk memulai ulang game
+        function resetGame() {
+            startGame();
+        }
+
+        // Mulai game saat halaman dimuat
+        startGame();
+    </script>
+
+</body>
+</html>

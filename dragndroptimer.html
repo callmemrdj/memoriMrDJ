@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanji Challenge 4x5</title>
+    <title>Kanji Challenge Mr.DJ</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -18,7 +18,7 @@
         .game-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(5, 1fr);
+            grid-template-rows: repeat(6, 1fr);
             gap: 10px;
             width: 90vw;
             max-width: 800px;
@@ -51,7 +51,7 @@
             border: 2px dashed #b2bec3;
             font-size: 14px;
             text-align: center;
-            color: #636e72;
+            color: #080808;
         }
 
         .hovered { background: #fab1a0; border-color: #e17055; }
@@ -62,7 +62,7 @@
 
     <div id="stats">Waktu: <span id="timer">60</span>s</div>
     <div class="game-grid" id="gameGrid"></div>
-
+    <p>Kanji Chalenge Mr.DJ</p>
     <div id="stats">
         Waktu: <span id="timer">60</span>s | 
         Skor: <span id="score">0</span>
@@ -75,6 +75,7 @@
             { kanji: '木', arti: 'POHON' }, { kanji: '金', arti: 'LOGAM' },
             { kanji: '土', arti: 'TANAH' }, { kanji: '日', arti: 'MATAHARI' },
             { kanji: '月', arti: 'BULAN' }, { kanji: '山', arti: 'GUNUNG' },
+            { kanji: '森', arti: 'HUTAN' }, { kanji: '石', arti: 'BATU' },
             { kanji: '川', arti: 'SUNGAI' }, { kanji: '田', arti: 'SAWAH' }
         ];
 
@@ -181,4 +182,5 @@
         initGame();
     </script>
 </body>
+
 </html>

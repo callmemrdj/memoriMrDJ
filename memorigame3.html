@@ -34,10 +34,16 @@
 <body>
     
 
-    <h1>Memory Kanji-Hiragana Mr.DJ</h1>
+    <h1>Kanji Memory</h1>
+    <h1>Mr.DJ</h1>
     <p>Level 3</p>
     <div class="game-message open-message" id="openingMessage">
         <h2>PETUNJUK PERMAINAN</h2>
+        <h3>痛い（いたい）、暗い（くらい）、低い（ひくい）</h3>
+        <h3>悪い（わるい）、重い（おもい）、眠い（ねむい）</h3>
+        <h3>軽い（かるい）、強い（つよい）、短い（みじかい）</h3>
+        <h3>痛い（いたい）、暗い（くらい）、低い（ひくい）</h3>
+        <h3>暑い（あつい）</h3>
         <p>Anda harus mencocokkan:</p>
         <p>KANJI dengan CARA BACANYA</p>
         <button onclick="resetGame()">Mulai</button>
@@ -53,7 +59,7 @@
         <p>Coba lagi untuk menyelesaikan tantangannya.</p>
         <button onclick="resetGame()">Coba Lagi</button>
     </div>
-    <div class="info">Sisa Waktu: <span id="timer">100</span>s</div>
+    <div class="info">Sisa Waktu: <span id="timer">80</span>s</div>
     <div class="grid" id="game-grid"></div>
     <button onclick="resetGame()">Reset Game</button>  
 
@@ -71,7 +77,7 @@
         let cards = [];
         let flippedCards = [];
         let matchedCount = 0;
-        let timeLeft = 100;
+        let timeLeft = 80;
         let timerInterval;
         
         function initGame() {
@@ -140,7 +146,7 @@
 
         function startTimer() {
             clearInterval(timerInterval);
-            timeLeft = 100;
+            timeLeft = 80;
             document.getElementById('timer').innerText = timeLeft;
             timerInterval = setInterval(() => {
                 timeLeft--;
@@ -169,4 +175,5 @@
         initGame();
     </script>
 </body>
+
 </html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Kanji Memory Game</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; }
+        .grid { display: grid; grid-template-columns: repeat(4, 100px); gap: 10px; margin-top: 20px; }
+        .card { width: 100px; height: 100px; background: #3993ee; color: white; display: flex; align-items: center; 
+                justify-content: center; font-size: 24px; cursor: pointer; border-radius: 8px; user-select: none; }
+        .card.flipped { background: #7ed5f8; color: #011222; }
+        .card.matched { background: #165794; color:#f6f6f8; cursor: default; }
+        .info { margin-top: 20px; font-size: 20px; }
+        /* Style untuk pesan Kemenangan dan Kekalahan */
+        .game-message {
+            display: none;
+            position: fixed;
+            color:#011222;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgb(177, 221, 250);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-align: center;
+        }
+            
+        button { background-color: rgb(124, 179, 216); border-radius: 8px; margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    
+
+   <h2>Kanji Memori</h2>
+    <h1>Mr.DJ</h1>
+    <p>Level 4</p>
+    <div class="game-message open-message" id="openingMessage">
+        <h2>PETUNJUK PERMAINAN</h2>
+        <p>Kanji di bawah ini</p>
+        <p>terpisah dalam satu kartu,</p>
+        <p>Tugas Anda untuk menggabungkannya</p>
+        <h3>留学, 大学, 見学, 用事</h3>
+        <h3>映画, 計画, 食事, 仕事</h3>
+        <h3>練習, 習慣, 学生, 時計</h3>
+        <button onclick="resetGame()">Mulai</button>
+    </div>
+    <!-- Pesan Lanjut Level -->
+    <div class="game-message win-message" id="winMessage">
+        <h2>Selamat! Anda LOLOS!</h2>
+        <button onclick="nextLevel()">Level berikutnya</button>
+    </div>
+    <!-- Pesan Kekalahan -->
+    <div class="game-message lose-message" id="loseMessage">
+        <h2>Waktu Habis!</h2>
+        <p>Coba lagi untuk menyelesaikan tantangannya.</p>
+        <button onclick="resetGame()">Coba Lagi</button>
+    </div>
+    <div class="info">Sisa Waktu: <span id="timer">150</span>s</div>
+    <div class="grid" id="game-grid"></div>
+    <button onclick="resetGame()">Reset Game</button>  
+
+    <script>
+
+        const nextLevelFile = `index.html`;
+
+        const kanjiPairs = [
+            { k: '留', h: '学', id: 1 }, { k: '用', h: '事', id: 2 },
+            { k: '大', h: '学', id: 3 }, { k: '仕', h: '事', id: 4 },
+            { k: '見', h: '学', id: 5 }, { k: '食', h: '事', id: 6 },
+            { k: '学', h: '生', id: 7 }, { k: '時', h: '計', id: 8 },
+            { k: '練', h: '習', id: 9 }, { k: '計', h: '画', id: 10 },
+            { k: '習', h: '慣', id: 11 }, { k: '映', h: '画', id: 12 }
+        ];
+
+        let cards = [];
+        let flippedCards = [];
+        let matchedCount = 0;
+        let timeLeft = 150;
+        let timerInterval;
+        
+        function initGame() {
+
+            winMessage.style.display = 'none';
+            loseMessage.style.display = 'none';
+            openingMessage.style.display = 'block';
+            // Gandakan data menjadi format kartu (Kanji & Hiragana)
+            cards = [];
+            kanjiPairs.forEach(pair => {
+                cards.push({ text: pair.k, id: pair.id });
+                cards.push({ text: pair.h, id: pair.id });
+            });
+            
+            // Acak kartu (Fisher-Yates Shuffle)
+            cards.sort(() => Math.random() - 0.5);
+
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = '';
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card');
+                cardElement.dataset.index = index;
+                cardElement.dataset.pairId = card.id;
+                cardElement.innerText = '?';
+                cardElement.onclick = () => flipCard(cardElement);
+                grid.appendChild(cardElement);
+            });
+
+            //startTimer();
+        }
+
+        function flipCard(el) {
+            if (flippedCards.length < 2 && !el.classList.contains('flipped')) {
+                el.classList.add('flipped');
+                el.innerText = cards[el.dataset.index].text;
+                flippedCards.push(el);
+
+                if (flippedCards.length === 2) {
+                    checkMatch();
+                }
+            }
+        }
+        
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.dataset.pairId === card2.dataset.pairId) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedCount++;
+                flippedCards = [];
+                if (matchedCount === kanjiPairs.length) {
+                    clearInterval(timerInterval);
+                    winMessage.style.display = 'block';
+                }
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    card1.innerText = '?';
+                    card2.innerText = '?';
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 150;
+            document.getElementById('timer').innerText = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    loseMessage.style.display = 'block';
+                   //resetGame();
+                }
+            }, 1000);
+        }
+        //Tombol untuk masuk ke level berikutnya
+        function nextLevel(){
+            window.location.href = nextLevelFile;
+        }
+
+        function resetGame() {
+            matchedCount = 0;
+            flippedCards = [];
+            initGame();
+            openingMessage.style.display = 'none';
+            startTimer();
+        }
+
+        // Jalankan game pertama kali
+        initGame();
+    </script>
+</body>
+</html>

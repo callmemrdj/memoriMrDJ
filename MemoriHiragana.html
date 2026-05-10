@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Hiragana Master - Level Game</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      body {
+        background: linear-gradient(135deg, #e6f2ff 0%, #cce0ff 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        overflow-x: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 15px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #2c5282;
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .level-title {
+        color: #4a5568;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .game-info {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 500px;
+        margin-bottom: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+      }
+
+      .info-label {
+        font-size: 0.7rem;
+        color: #4a5568;
+        margin-bottom: 3px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .info-value {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #2c5282;
+      }
+
+      .timer {
+        color: #e53e3e;
+      }
+      .level-display {
+        color: #805ad5;
+      }
+
+      .game-container {
+        width: 100%;
+        max-width: 500px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 0 5px;
+      }
+
+      .card {
+        aspect-ratio: 1;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem; /* Sedikit disesuaikan untuk teks panjang */
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        min-height: 60px;
+        border: 2px solid transparent;
+      }
+
+      .card:active {
+        transform: scale(0.95);
+      }
+
+      .card.selected {
+        background: #bee3f8;
+        transform: scale(0.95);
+        border-color: #4299e1;
+      }
+
+      .card.matched {
+        background: #9ae6b4;
+        pointer-events: none;
+        animation: matchPulse 0.4s ease;
+        border-color: #48bb78;
+        opacity: 0.8;
+      }
+
+      .card.wrong {
+        background: #fed7d7;
+        animation: shake 0.4s ease;
+        border-color: #fc8181;
+      }
+
+      .card-type {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        font-size: 0.5rem;
+        color: #718096;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 1px 3px;
+        border-radius: 3px;
+        font-weight: 600;
+      }
+
+      /* Message / Modal */
+      .message {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        z-index: 1000;
+        display: none;
+        width: 90%;
+        max-width: 350px;
+      }
+
+      .message h2 {
+        margin-bottom: 10px;
+        color: #2c5282;
+        font-size: 1.5rem;
+      }
+
+      .message p {
+        margin-bottom: 20px;
+        color: #4a5568;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .btn {
+        background: #4299e1;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: 100%;
+      }
+
+      .btn-next {
+        background: #48bb78;
+      }
+
+      .btn-restart {
+        background: #ed8936;
+      }
+
+      .btn:active {
+        transform: scale(0.98);
+      }
+
+      .lives {
+        display: flex;
+        gap: 3px;
+        justify-content: center;
+      }
+      .heart {
+        font-size: 1.2rem;
+      }
+
+      @keyframes matchPulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-4px);
+        }
+        75% {
+          transform: translateX(4px);
+        }
+      }
+
+      /* Mobile Optimizations */
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 1.5rem;
+        }
+        .card {
+          font-size: 1rem;
+          min-height: 55px;
+        }
+        .card-type {
+          font-size: 0.4rem;
+        }
+        .game-info {
+          padding: 8px;
+          gap: 2px;
+        }
+        .info-label {
+          font-size: 0.6rem;
+        }
+        .info-value {
+          font-size: 1rem;
+        }
+      }
+
+      html,
+      body {
+        overflow: hidden;
+        touch-action: manipulation;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Hiragana Mr.DJ</h1>
+      <div class="level-title" id="levelTitle">Level 1: Keluarga</div>
+    </header>
+
+    <main>
+      <div class="game-info">
+        <div class="info-item">
+          <span class="info-label">Level</span>
+          <span class="info-value level-display" id="levelDisplay">1</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Timer</span>
+          <span class="info-value timer" id="timer">01:00</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Skor</span>
+          <span class="info-value" id="score">0</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Nyawa</span>
+          <div class="lives" id="lives">
+            <span class="heart">❤️</span>
+            <span class="heart">❤️</span>
+            <span class="heart">❤️</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-container" id="gameContainer"></div>
+    </main>
+
+    <div class="message" id="message">
+      <h2 id="messageTitle">Level Selesai!</h2>
+      <p id="messageText">Selamat! Lanjut ke level berikutnya?</p>
+
+      <div class="btn-group" id="btnGroup">
+        <!-- Buttons will be injected dynamically via JS -->
+      </div>
+    </div>
+
+    <script>
+      // Data Level Game
+      const gameLevels = [
+        {
+          name: 'LEVEL 1',
+          data: [
+            { kanji: 'あ', hiragana: 'a' },
+            { kanji: 'い', hiragana: 'i' },
+            { kanji: 'う', hiragana: 'u' },
+            { kanji: 'え', hiragana: 'e' },
+            { kanji: 'お', hiragana: 'o' },
+            { kanji: 'か', hiragana: 'ka' },
+            { kanji: 'き', hiragana: 'ki' },
+            { kanji: 'く', hiragana: 'ku' },
+            { kanji: 'け', hiragana: 'ke' },
+            { kanji: 'こ', hiragana: 'ko' },
+            { kanji: 'さ', hiragana: 'sa' },
+            { kanji: 'し', hiragana: 'shi' },
+          ],
+        },
+        {
+          name: 'LEVEL 2',
+          data: [
+            { kanji: 'す', hiragana: 'su' },
+            { kanji: 'せ', hiragana: 'se' },
+            { kanji: 'そ', hiragana: 'so' },
+            { kanji: 'た', hiragana: 'ta' },
+            { kanji: 'ち', hiragana: 'chi' },
+            { kanji: 'つ', hiragana: 'tsu' },
+            { kanji: 'て', hiragana: 'te' },
+            { kanji: 'と', hiragana: 'to' },
+            { kanji: 'な', hiragana: 'na' },
+            { kanji: 'に', hiragana: 'ni' },
+            { kanji: 'ぬ', hiragana: 'nu' },
+            { kanji: 'ね', hiragana: 'ne' },
+          ],
+        },
+        {
+          name: 'LEVEL 3',
+          data: [
+            { kanji: 'の', hiragana: 'no' },
+            { kanji: 'は', hiragana: 'ha' },
+            { kanji: 'ひ', hiragana: 'hi' },
+            { kanji: 'ふ', hiragana: 'fu' },
+            { kanji: 'へ', hiragana: 'he' },
+            { kanji: 'ほ', hiragana: 'ho' },
+            { kanji: 'ら', hiragana: 'ra' },
+            { kanji: 'り', hiragana: 'ri' },
+            { kanji: 'る', hiragana: 'ru' },
+            { kanji: 'れ', hiragana: 're' },
+            { kanji: 'ろ', hiragana: 'ro' },
+            { kanji: 'わ', hiragana: 'wa' },
+          ],
+        },
+        {
+          name: 'LEVEL 4',
+          data: [
+            { kanji: 'を', hiragana: 'wo' },
+            { kanji: 'ん', hiragana: 'n' },
+            { kanji: 'が', hiragana: 'ga' },
+            { kanji: 'ぎ', hiragana: 'gi' },
+            { kanji: 'ぐ', hiragana: 'gu' },
+            { kanji: 'げ', hiragana: 'ge' },
+            { kanji: 'ご', hiragana: 'go' },
+            { kanji: 'ざ', hiragana: 'za' },
+            { kanji: 'じ', hiragana: 'ji' },
+            { kanji: 'ず', hiragana: 'zu' },
+            { kanji: 'ぜ', hiragana: 'ze' },
+            { kanji: 'ぞ', hiragana: 'zo' },
+          ],
+        },
+        {
+          name: 'LEVEL 5',
+          data: [
+            { kanji: 'きゃ', hiragana: 'kya' },
+            { kanji: 'きゅ', hiragana: 'kyu' },
+            { kanji: 'きょ', hiragana: 'kyo' },
+            { kanji: 'しゃ', hiragana: 'sha' },
+            { kanji: 'しゅ', hiragana: 'shu' },
+            { kanji: 'しょ', hiragana: 'sho' },
+            { kanji: 'みゃ', hiragana: 'mya' },
+            { kanji: 'みゅ', hiragana: 'myu' },
+            { kanji: 'みょ', hiragana: 'myo' },
+            { kanji: 'ぱ', hiragana: 'pa' },
+            { kanji: 'ぴ', hiragana: 'pi' },
+            { kanji: 'ぺ', hiragana: 'pe' },
+          ],
+        },
+      ];
+
+      // Game State
+      let currentLevelIndex = 0;
+      let cards = [];
+      let selectedCards = [];
+      let matchedPairs = 0;
+      let lives = 3;
+      let score = 0; // Skor kumulatif
+      let timeLeft = 60;
+      let timerInterval;
+      let isProcessing = false;
+      let totalLevels = gameLevels.length;
+
+      // DOM elements
+      const gameContainer = document.getElementById('gameContainer');
+      const levelDisplay = document.getElementById('levelDisplay');
+      const levelTitle = document.getElementById('levelTitle');
+      const timerElement = document.getElementById('timer');
+      const scoreElement = document.getElementById('score');
+      const livesElement = document.getElementById('lives');
+      const messageElement = document.getElementById('message');
+      const messageTitle = document.getElementById('messageTitle');
+      const messageText = document.getElementById('messageText');
+      const btnGroup = document.getElementById('btnGroup');
+
+      // Vibration
+      function vibrate(duration = 50) {
+        if ('vibrate' in navigator) navigator.vibrate(duration);
+      }
+
+      // Initialize Game (Specific Level)
+      function initGame(resetScore = false) {
+        if (resetScore) {
+          score = 0;
+          currentLevelIndex = 0;
+        }
+
+        // Load Data Level
+        const levelData = gameLevels[currentLevelIndex].data;
+
+        // Reset per level state
+        cards = [];
+        selectedCards = [];
+        matchedPairs = 0;
+        lives = 3;
+        timeLeft = 60;
+        isProcessing = false;
+
+        // Update UI
+        levelDisplay.textContent = currentLevelIndex + 1;
+        levelTitle.textContent = `Level ${currentLevelIndex + 1}: ${gameLevels[currentLevelIndex].name}`;
+        updateScore();
+        updateLives();
+        updateTimer();
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(updateTimer, 1000);
+
+        createCards(levelData);
+        shuffleCards();
+        renderCards();
+      }
+
+      function createCards(dataPairs) {
+        gameContainer.innerHTML = '';
+        cards = [];
+
+        dataPairs.forEach((pair, index) => {
+          cards.push({
+            id: `kanji-${index}`,
+            content: pair.kanji,
+            type: 'kanji',
+            pairId: index,
+          });
+
+          cards.push({
+            id: `hiragana-${index}`,
+            content: pair.hiragana,
+            type: 'hiragana',
+            pairId: index,
+          });
+        });
+      }
+
+      function shuffleCards() {
+        for (let i = cards.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cards[i], cards[j]] = [cards[j], cards[i]];
+        }
+      }
+
+      function renderCards() {
+        gameContainer.innerHTML = '';
+
+        cards.forEach((card) => {
+          const cardElement = document.createElement('div');
+          cardElement.className = 'card';
+          cardElement.dataset.id = card.id;
+          cardElement.dataset.type = card.type;
+          cardElement.dataset.pairId = card.pairId;
+          cardElement.textContent = card.content;
+
+          // Dynamic font size based on content length
+          if (card.content.length > 3) {
+            cardElement.style.fontSize = '0.9rem';
+          } else if (card.content.length > 2) {
+            cardElement.style.fontSize = '1.1rem';
+          }
+
+          const typeIndicator = document.createElement('span');
+          typeIndicator.className = 'card-type';
+          typeIndicator.textContent = card.type === 'kanji' ? 'K' : 'H';
+          cardElement.appendChild(typeIndicator);
+
+          cardElement.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            selectCard(cardElement);
+          });
+
+          cardElement.addEventListener('click', (e) => {
+            e.preventDefault();
+            selectCard(cardElement);
+          });
+
+          gameContainer.appendChild(cardElement);
+        });
+      }
+
+      function selectCard(cardElement) {
+        if (isProcessing) return;
+        if (cardElement.classList.contains('matched') || cardElement.classList.contains('selected')) return;
+
+        cardElement.classList.add('selected');
+        selectedCards.push(cardElement);
+
+        if (selectedCards.length === 2) {
+          isProcessing = true;
+          checkMatch();
+        }
+      }
+
+      function checkMatch() {
+        const [card1, card2] = selectedCards;
+
+        if (card1.dataset.pairId === card2.dataset.pairId && card1.dataset.type !== card2.dataset.type) {
+          setTimeout(() => {
+            card1.classList.add('matched');
+            card2.classList.add('matched');
+            card1.classList.remove('selected');
+            card2.classList.remove('selected');
+
+            matchedPairs++;
+            score += 10;
+            updateScore();
+            vibrate(30);
+
+            const totalPairs = gameLevels[currentLevelIndex].data.length;
+            if (matchedPairs === totalPairs) {
+              endGame(true);
+            }
+
+            selectedCards = [];
+            isProcessing = false;
+          }, 400);
+        } else {
+          setTimeout(() => {
+            card1.classList.add('wrong');
+            card2.classList.add('wrong');
+            vibrate([50, 30, 50]);
+
+            setTimeout(() => {
+              card1.classList.remove('selected', 'wrong');
+              card2.classList.remove('selected', 'wrong');
+              selectedCards = [];
+              isProcessing = false;
+            }, 400);
+          }, 300);
+
+          lives--;
+          updateLives();
+
+          if (lives <= 0) {
+            endGame(false);
+          }
+        }
+      }
+
+      function updateScore() {
+        scoreElement.textContent = score;
+      }
+
+      function updateLives() {
+        livesElement.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+          const heart = document.createElement('span');
+          heart.className = 'heart';
+          heart.textContent = i < lives ? '❤️' : '🤍';
+          livesElement.appendChild(heart);
+        }
+      }
+
+      function updateTimer() {
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          endGame(false);
+          return;
+        }
+        timeLeft--;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        if (timeLeft <= 30) {
+          timerElement.style.color = '#e53e3e';
+          if (timeLeft <= 10 && timeLeft > 0) vibrate(100);
+        } else if (timeLeft <= 60) {
+          timerElement.style.color = '#dd6b20';
+        } else {
+          timerElement.style.color = '#e53e3e'; // Default color
+        }
+      }
+
+      function endGame(isWin) {
+        clearInterval(timerInterval);
+        isProcessing = true;
+        btnGroup.innerHTML = ''; // Clear previous buttons
+
+        if (isWin) {
+          // Cek apakah ini level terakhir
+          if (currentLevelIndex < totalLevels - 1) {
+            messageTitle.textContent = 'Level Selesai! 🎉';
+            messageText.textContent = `Luar biasa! Total Skor: ${score}\nSiap untuk Level ${currentLevelIndex + 2}?`;
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'btn btn-next';
+            nextBtn.textContent = 'Level Berikutnya ➡️';
+            nextBtn.onclick = () => {
+              messageElement.style.display = 'none';
+              currentLevelIndex++;
+              initGame(); // Lanjut level berikutnya, skor tetap
+            };
+
+            const restartBtn = document.createElement('button');
+            restartBtn.className = 'btn btn-restart';
+            restartBtn.textContent = 'Ulangi Level Ini 🔄';
+            restartBtn.onclick = () => {
+              messageElement.style.display = 'none';
+              initGame(); // Ulangi level sekarang
+            };
+
+            btnGroup.appendChild(nextBtn);
+            btnGroup.appendChild(restartBtn);
+          } else {
+            // Game Tamat (Menang Semua Level)
+            messageTitle.textContent = 'KAMU JUARA! 🏆';
+            messageText.textContent = `Selamat! Anda telah menamatkan semua level.\nSkor Akhir: ${score}`;
+
+            const mainMenuBtn = document.createElement('button');
+            mainMenuBtn.className = 'btn btn-restart';
+            mainMenuBtn.textContent = 'Main Ulang dari Awal 🏠';
+            mainMenuBtn.onclick = () => {
+              messageElement.style.display = 'none';
+              initGame(true); // Reset total game
+            };
+
+            btnGroup.appendChild(mainMenuBtn);
+          }
+          vibrate([100, 50, 100]);
+        } else {
+          // Kalah (Game Over)
+          messageTitle.textContent = 'Coba Lagi 💪';
+          messageText.textContent = lives <= 0 ? 'Nyawa habis!' : 'Waktu habis!';
+          messageText.textContent += `\nSkor: ${score}`;
+
+          const retryBtn = document.createElement('button');
+          retryBtn.className = 'btn';
+          retryBtn.textContent = 'Ulangi Level Ini';
+          retryBtn.onclick = () => {
+            messageElement.style.display = 'none';
+            initGame(); // Ulangi level sekarang
+          };
+
+          const resetBtn = document.createElement('button');
+          resetBtn.className = 'btn btn-restart';
+          resetBtn.textContent = 'Mulai Dari Awal';
+          resetBtn.onclick = () => {
+            messageElement.style.display = 'none';
+            initGame(true); // Reset total game
+          };
+
+          btnGroup.appendChild(retryBtn);
+          btnGroup.appendChild(resetBtn);
+          vibrate(200);
+        }
+
+        messageElement.style.display = 'block';
+      }
+
+      // Prevent zoom on double tap
+      let lastTouchEnd = 0;
+      document.addEventListener(
+        'touchend',
+        (e) => {
+          const now = Date.now();
+          if (now - lastTouchEnd <= 300) e.preventDefault();
+          lastTouchEnd = now;
+        },
+        false,
+      );
+
+      window.addEventListener('orientationchange', () => setTimeout(renderCards, 100));
+      window.addEventListener('load', () => initGame(true));
+    </script>
+  </body>
+</html>

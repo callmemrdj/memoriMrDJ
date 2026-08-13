@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kanji Memory Game - 18 Level</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      body {
+        font-family: 'Poppins', 'Noto Sans JP', sans-serif;
+        background: linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #1a3a5c 100%);
+        min-height: 100vh;
+        color: #e0f0ff;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* Animated background particles */
+      .bg-particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(100, 200, 255, 0.3);
+        border-radius: 50%;
+        animation: float 15s infinite ease-in-out;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(100vh) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-10vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+
+      /* Screens */
+      .screen {
+        display: none;
+        width: 100%;
+        max-width: 600px;
+        padding: 20px;
+        z-index: 1;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .screen.active {
+        display: flex;
+      }
+
+      /* Header */
+      .game-title {
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        font-weight: 700;
+        text-align: center;
+        margin: 20px 0 10px;
+        background: linear-gradient(135deg, #64c8ff, #a8e6ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(100, 200, 255, 0.3);
+      }
+
+      .game-subtitle {
+        font-size: clamp(0.8rem, 3vw, 1rem);
+        color: #8ab4d9;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      /* Level Select Grid */
+      .level-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        width: 100%;
+        max-width: 500px;
+        margin-top: 10px;
+      }
+
+      .level-btn {
+        aspect-ratio: 1;
+        border: none;
+        border-radius: 16px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: clamp(1rem, 4vw, 1.3rem);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .level-btn.locked {
+        background: rgba(30, 50, 80, 0.6);
+        color: #4a6a8a;
+        border: 2px solid rgba(60, 90, 130, 0.4);
+        cursor: not-allowed;
+      }
+
+      .level-btn.unlocked {
+        background: linear-gradient(135deg, rgba(30, 100, 180, 0.8), rgba(20, 60, 120, 0.9));
+        color: #e0f0ff;
+        border: 2px solid rgba(100, 200, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 100, 200, 0.3);
+      }
+
+      .level-btn.unlocked:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(0, 150, 255, 0.4);
+        border-color: rgba(100, 200, 255, 0.6);
+      }
+
+      .level-btn.completed {
+        background: linear-gradient(135deg, rgba(30, 180, 120, 0.8), rgba(20, 120, 80, 0.9));
+        border: 2px solid rgba(100, 255, 180, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 200, 100, 0.3);
+      }
+
+      .level-btn.completed:hover {
+        box-shadow: 0 8px 25px rgba(0, 255, 150, 0.4);
+      }
+
+      .level-stars {
+        font-size: 0.7rem;
+        margin-top: 2px;
+        letter-spacing: 2px;
+      }
+
+      .level-btn.locked .level-stars {
+        display: none;
+      }
+
+      /* Game HUD */
+      .hud {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        max-width: 500px;
+        margin: 10px 0 15px;
+        padding: 12px 20px;
+        background: rgba(20, 50, 90, 0.5);
+        border-radius: 16px;
+        border: 1px solid rgba(100, 200, 255, 0.15);
+        backdrop-filter: blur(10px);
+      }
+
+      .hud-item {
+        text-align: center;
+      }
+
+      .hud-label {
+        font-size: 0.7rem;
+        color: #8ab4d9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .hud-value {
+        font-size: clamp(1.1rem, 4vw, 1.5rem);
+        font-weight: 700;
+        color: #64c8ff;
+      }
+
+      .hud-value.timer-warning {
+        color: #ff6b6b;
+        animation: pulse 0.5s infinite alternate;
+      }
+
+      @keyframes pulse {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0.6;
+        }
+      }
+
+      /* Game Grid */
+      .game-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        width: 100%;
+        max-width: 500px;
+        margin-bottom: 20px;
+      }
+
+      @media (min-width: 400px) {
+        .game-grid {
+          grid-template-columns: repeat(5, 1fr);
+          gap: 10px;
+        }
+      }
+
+      .card {
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, rgba(30, 80, 150, 0.9), rgba(20, 50, 100, 0.95));
+        border: 2px solid rgba(100, 200, 255, 0.2);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(0.9rem, 3.5vw, 1.3rem);
+        font-weight: 700;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 30, 80, 0.4);
+        color: transparent;
+      }
+
+      .card::before {
+        content: '?';
+        color: rgba(150, 210, 255, 0.6);
+        font-size: clamp(1.5rem, 5vw, 2rem);
+        font-weight: 700;
+      }
+
+      .card:hover:not(.flipped):not(.matched) {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 150, 255, 0.3);
+        border-color: rgba(100, 200, 255, 0.4);
+      }
+
+      .card.flipped {
+        background: linear-gradient(135deg, rgba(100, 200, 255, 0.2), rgba(80, 160, 220, 0.15));
+        border-color: rgba(100, 200, 255, 0.6);
+        box-shadow: 0 0 20px rgba(100, 200, 255, 0.2);
+        color: #e0f0ff;
+        transform: rotateY(0deg);
+      }
+
+      .card.flipped::before {
+        display: none;
+      }
+
+      .card.matched {
+        background: linear-gradient(135deg, rgba(30, 180, 120, 0.8), rgba(20, 140, 90, 0.9));
+        border-color: rgba(100, 255, 180, 0.5);
+        box-shadow: 0 0 20px rgba(0, 255, 150, 0.3);
+        color: #e0ffee;
+        cursor: default;
+        animation: matchPop 0.5s ease;
+      }
+
+      .card.matched::before {
+        display: none;
+      }
+
+      @keyframes matchPop {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.15);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .card.wrong {
+        animation: shake 0.4s ease;
+        border-color: rgba(255, 100, 100, 0.6);
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        75% {
+          transform: translateX(5px);
+        }
+      }
+
+      /* Buttons */
+      .btn {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 14px 32px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1e6eb4, #0d4a8a);
+        color: #e0f0ff;
+        border: 2px solid rgba(100, 200, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 100, 200, 0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 150, 255, 0.4);
+        border-color: rgba(100, 200, 255, 0.5);
+      }
+
+      .btn-secondary {
+        background: rgba(30, 60, 100, 0.6);
+        color: #8ab4d9;
+        border: 2px solid rgba(100, 200, 255, 0.2);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(40, 80, 130, 0.7);
+        border-color: rgba(100, 200, 255, 0.4);
+      }
+
+      .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      /* Modal / Overlay */
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(5, 15, 30, 0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        backdrop-filter: blur(5px);
+      }
+
+      .overlay.active {
+        display: flex;
+      }
+
+      .modal {
+        background: linear-gradient(135deg, rgba(20, 50, 90, 0.95), rgba(10, 30, 60, 0.98));
+        border: 2px solid rgba(100, 200, 255, 0.2);
+        border-radius: 24px;
+        padding: 30px;
+        text-align: center;
+        max-width: 90%;
+        width: 380px;
+        box-shadow: 0 20px 60px rgba(0, 50, 120, 0.5);
+        animation: modalIn 0.4s ease;
+      }
+
+      @keyframes modalIn {
+        from {
+          transform: scale(0.8);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .modal-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .modal-title.win {
+        background: linear-gradient(135deg, #64ffaa, #00cc88);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .modal-title.lose {
+        background: linear-gradient(135deg, #ff8888, #ff4444);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .modal-stars {
+        font-size: 2rem;
+        margin: 15px 0;
+        letter-spacing: 8px;
+      }
+
+      .modal-stats {
+        color: #8ab4d9;
+        margin: 10px 0;
+        font-size: 0.95rem;
+      }
+
+      .modal-stats span {
+        color: #64c8ff;
+        font-weight: 700;
+      }
+
+      /* Progress bar */
+      .progress-container {
+        width: 100%;
+        max-width: 500px;
+        margin: 15px 0;
+      }
+
+      .progress-bar {
+        height: 8px;
+        background: rgba(30, 60, 100, 0.5);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #1e6eb4, #64c8ff);
+        border-radius: 4px;
+        transition: width 0.5s ease;
+      }
+
+      /* Confetti canvas */
+      #confetti-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 99;
+      }
+
+      /* Level info */
+      .level-info {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      .level-info h2 {
+        font-size: clamp(1.2rem, 4vw, 1.6rem);
+        color: #a8e6ff;
+      }
+
+      .level-info p {
+        font-size: 0.85rem;
+        color: #8ab4d9;
+      }
+
+      /* Total progress on menu */
+      .total-progress {
+        text-align: center;
+        margin: 10px 0 20px;
+        color: #8ab4d9;
+        font-size: 0.9rem;
+      }
+
+      .total-progress span {
+        color: #64c8ff;
+        font-weight: 700;
+      }
+    </style>
+    <base target="_blank" />
+  </head>
+  <body>
+    <!-- Background Particles -->
+    <div class="bg-particles" id="particles"></div>
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- MENU SCREEN -->
+    <div class="screen active" id="menu-screen">
+      <h1 class="game-title">Kanji Memory Mr.DJ</h1>
+      <p class="game-subtitle">Cocokkan Kanji dengan Kunyomi-nya</p>
+      <div class="total-progress" id="total-progress">Progress: <span>0/9</span> Level Selesai</div>
+      <div class="level-grid" id="level-grid"></div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div class="screen" id="game-screen">
+      <div class="level-info">
+        <h2 id="level-title">Level 1</h2>
+        <p>Cocokkan pasangan Kanji - Kunyomi</p>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="match-progress" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="hud-item">
+          <div class="hud-label">Waktu</div>
+          <div class="hud-value" id="timer">50</div>
+        </div>
+        <div class="hud-item">
+          <div class="hud-label">Langkah</div>
+          <div class="hud-value" id="moves">0</div>
+        </div>
+        <div class="hud-item">
+          <div class="hud-label">Pasangan</div>
+          <div class="hud-value"><span id="matched">0</span>/5</div>
+        </div>
+      </div>
+      <div class="game-grid" id="game-grid"></div>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="backToMenu()">Menu</button>
+        <button class="btn btn-primary" onclick="restartLevel()">Ulang</button>
+      </div>
+    </div>
+
+    <!-- MODAL OVERLAY -->
+    <div class="overlay" id="modal-overlay">
+      <div class="modal">
+        <div class="modal-title" id="modal-title">Selamat!</div>
+        <div class="modal-stars" id="modal-stars">⭐⭐⭐</div>
+        <div class="modal-stats" id="modal-stats"></div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="backToMenu()">Menu</button>
+          <button class="btn btn-primary" id="modal-next-btn" onclick="nextLevel()">Level Berikutnya</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===================== DATA LEVEL =====================
+      const levels = [
+        {
+          // Level 1
+          pairs: [
+            { kanji: '赤い', kunyomi: 'あかい' },
+            { kanji: '青い', kunyomi: 'あおい' },
+            { kanji: '黒い', kunyomi: 'くろい' },
+            { kanji: '白い', kunyomi: 'しろい' },
+            { kanji: '黄色い', kunyomi: 'きいろい' },
+            { kanji: '紫', kunyomi: 'むらさき' },
+            { kanji: '茶色', kunyomi: 'ちゃいろ' },
+            { kanji: '緑', kunyomi: 'みどり' },
+            { kanji: '近い', kunyomi: 'ちかい' },
+            { kanji: '早い', kunyomi: 'はやい' },
+          ],
+        },
+
+        {
+          // Level 2
+          pairs: [
+            { kanji: '良い', kunyomi: 'いい' },
+            { kanji: '悪い', kunyomi: 'わるい' },
+            { kanji: '遅い', kunyomi: 'おそい' },
+            { kanji: '遠い', kunyomi: 'とおい' },
+            { kanji: '新しい', kunyomi: 'あたらしい' },
+            { kanji: '広い', kunyomi: 'ひろい' },
+            { kanji: '古い', kunyomi: 'ふるい' },
+            { kanji: '大きい', kunyomi: 'おおきい' },
+            { kanji: '小さい', kunyomi: 'ちいさい' },
+            { kanji: '高い', kunyomi: 'たかい' },
+          ],
+        },
+
+        {
+          // Level 3
+          pairs: [
+            { kanji: '低い', kunyomi: 'ひくい' },
+            { kanji: '安い', kunyomi: 'やすい' },
+            { kanji: '強い', kunyomi: 'つよい' },
+            { kanji: '忙しい', kunyomi: 'いそがしい' },
+            { kanji: '同じ', kunyomi: 'おなじ' },
+            { kanji: '暑い', kunyomi: 'あつい' },
+            { kanji: '寒い', kunyomi: 'さむい' },
+            { kanji: '熱い', kunyomi: 'あつい' },
+            { kanji: '冷たい', kunyomi: 'つめたい' },
+            { kanji: '暖かい', kunyomi: 'あたたかい' },
+          ],
+        },
+
+        {
+          // Level 4
+          pairs: [
+            { kanji: '涼しい', kunyomi: 'すずしい' },
+            { kanji: '明るい', kunyomi: 'あかるい' },
+            { kanji: '多い', kunyomi: 'おおい' },
+            { kanji: '少ない', kunyomi: 'すくない' },
+            { kanji: '遠い', kunyomi: 'とおい' },
+            { kanji: '楽しい', kunyomi: 'たのしい' },
+            { kanji: '甘い', kunyomi: 'あまい' },
+            { kanji: '辛い', kunyomi: 'からい' },
+            { kanji: '悪い', kunyomi: 'わるい' },
+            { kanji: '痛い', kunyomi: 'いたい' },
+          ],
+        },
+
+        {
+          // Level 5
+          pairs: [
+            { kanji: '眠い', kunyomi: 'ねむい' },
+            { kanji: '長い', kunyomi: 'ながい' },
+            { kanji: '短い', kunyomi: 'みじかい' },
+            { kanji: '暗い', kunyomi: 'くらい' },
+            { kanji: '危ない', kunyomi: 'あぶない' },
+            { kanji: '面白い', kunyomi: 'おもしろい' },
+            { kanji: '難しい', kunyomi: 'むずかしい' },
+            { kanji: '易しい', kunyomi: 'やさしい' },
+            { kanji: '珍しい', kunyomi: 'めずらしい' },
+            { kanji: '美しい', kunyomi: 'うつくしい' },
+          ],
+        },
+
+        {
+          // Level 6
+          pairs: [
+            { kanji: '細かい', kunyomi: 'こまかい' },
+            { kanji: '太い', kunyomi: 'ふとい' },
+            { kanji: '細い', kunyomi: 'ほそい' },
+            { kanji: '鈍い', kunyomi: 'にぶい' },
+            { kanji: '鋭い', kunyomi: 'するどい' },
+            { kanji: '柔らかい', kunyomi: 'やわらかい' },
+            { kanji: '硬い', kunyomi: 'かたい' },
+            { kanji: '軽い', kunyomi: 'かるい' },
+            { kanji: '重い', kunyomi: 'おもい' },
+            { kanji: '正しい', kunyomi: 'ただしい' },
+          ],
+        },
+
+        {
+          // Level 7
+          pairs: [
+            { kanji: '間違い', kunyomi: 'まちがい' },
+            { kanji: '正直', kunyomi: 'しょうじき' },
+            { kanji: '簡単', kunyomi: 'かんたん' },
+            { kanji: '複雑', kunyomi: 'ふくざつ' },
+            { kanji: '便利', kunyomi: 'べんり' },
+            { kanji: '不便', kunyomi: 'ふべん' },
+            { kanji: '面倒', kunyomi: 'めんどう' },
+            { kanji: '普通', kunyomi: 'ふつう' },
+            { kanji: '自由', kunyomi: 'じゆう' },
+            { kanji: '好き', kunyomi: 'すき' },
+          ],
+        },
+
+        {
+          // Level 8
+          pairs: [
+            { kanji: '元気', kunyomi: 'げんき' },
+            { kanji: '便利', kunyomi: 'べんり' },
+            { kanji: '不便', kunyomi: 'ふべん' },
+            { kanji: '静か', kunyomi: 'しずか' },
+            { kanji: '有名', kunyomi: 'ゆうめい' },
+            { kanji: '苦手', kunyomi: 'にがて' },
+            { kanji: '満足', kunyomi: 'まんぞく' },
+            { kanji: '特別', kunyomi: 'とくべつ' },
+            { kanji: '大切', kunyomi: 'たいせつ' },
+            { kanji: '大変', kunyomi: 'たいへん' },
+          ],
+        },
+        {
+          // Level 9
+          pairs: [
+            { kanji: '上手', kunyomi: 'じょうず' },
+            { kanji: '親切', kunyomi: 'しんせつ' },
+            { kanji: '幸せ', kunyomi: 'しあわせ' },
+            { kanji: '必要', kunyomi: 'ひつよう' },
+            { kanji: '無料', kunyomi: 'むりょう' },
+            { kanji: '心配', kunyomi: 'しんぱい' },
+            { kanji: '元気', kunyomi: 'げんき' },
+            { kanji: '真面目', kunyomi: 'まじめ' },
+            { kanji: '危険', kunyomi: 'きけん' },
+            { kanji: '安全', kunyomi: 'あんぜん' },
+          ],
+        },
+      ];
+
+      // ===================== STATE =====================
+      let currentLevel = 0;
+      let cards = [];
+      let flippedCards = [];
+      let matchedCount = 0;
+      let moves = 0;
+      let timeLeft = 50;
+      let timerInterval = null;
+      let isProcessing = false;
+      let levelData = {}; // { levelIndex: { completed: true, stars: 3, bestTime: 45 } }
+
+      // ===================== AUDIO =====================
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      let audioCtx = null;
+
+      function ensureAudio() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      }
+
+      function playSound(type) {
+        ensureAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'flip') {
+          osc.frequency.value = 600;
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'match') {
+          osc.frequency.value = 800;
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.3);
+          // Second tone
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(audioCtx.destination);
+          osc2.frequency.value = 1200;
+          gain2.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.1);
+          gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+          osc2.start(audioCtx.currentTime + 0.1);
+          osc2.stop(audioCtx.currentTime + 0.4);
+        } else if (type === 'wrong') {
+          osc.frequency.value = 200;
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'win') {
+          [523, 659, 784, 1047].forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.15);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.15 + 0.4);
+            o.start(audioCtx.currentTime + i * 0.15);
+            o.stop(audioCtx.currentTime + i * 0.15 + 0.4);
+          });
+        } else if (type === 'lose') {
+          [400, 350, 300, 250].forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.2);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.2 + 0.3);
+            o.start(audioCtx.currentTime + i * 0.2);
+            o.stop(audioCtx.currentTime + i * 0.2 + 0.3);
+          });
+        }
+      }
+
+      // ===================== PARTICLES =====================
+      function initParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+          const p = document.createElement('div');
+          p.className = 'particle';
+          p.style.left = Math.random() * 100 + '%';
+          p.style.animationDelay = Math.random() * 15 + 's';
+          p.style.animationDuration = 10 + Math.random() * 10 + 's';
+          p.style.width = 2 + Math.random() * 4 + 'px';
+          p.style.height = p.style.width;
+          container.appendChild(p);
+        }
+      }
+
+      // ===================== CONFETTI =====================
+      function fireConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#64c8ff', '#64ffaa', '#ffd700', '#ff6b9d', '#c084fc', '#ffffff'];
+
+        for (let i = 0; i < 100; i++) {
+          particles.push({
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            vx: (Math.random() - 0.5) * 15,
+            vy: (Math.random() - 0.5) * 15 - 5,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            size: Math.random() * 6 + 3,
+            life: 1,
+            decay: 0.01 + Math.random() * 0.01,
+          });
+        }
+
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          let alive = false;
+          particles.forEach((p) => {
+            if (p.life > 0) {
+              alive = true;
+              p.x += p.vx;
+              p.y += p.vy;
+              p.vy += 0.2;
+              p.life -= p.decay;
+              ctx.globalAlpha = p.life;
+              ctx.fillStyle = p.color;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          });
+          if (alive) requestAnimationFrame(animate);
+          else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        animate();
+      }
+
+      // ===================== LEVEL SELECT =====================
+      function loadProgress() {
+        const saved = localStorage.getItem('kanjiMemoryProgress');
+        if (saved) levelData = JSON.parse(saved);
+      }
+
+      function saveProgress() {
+        localStorage.setItem('kanjiMemoryProgress', JSON.stringify(levelData));
+      }
+
+      function renderLevelSelect() {
+        loadProgress();
+        const grid = document.getElementById('level-grid');
+        grid.innerHTML = '';
+
+        let completedCount = 0;
+
+        levels.forEach((lvl, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'level-btn';
+          const data = levelData[idx] || {};
+
+          if (idx === 0 || (levelData[idx - 1] && levelData[idx - 1].completed)) {
+            btn.classList.add(data.completed ? 'completed' : 'unlocked');
+          } else {
+            btn.classList.add('locked');
+          }
+
+          if (data.completed) completedCount++;
+
+          btn.innerHTML = `
+                    <div>${idx + 1}</div>
+                    <div class="level-stars">${data.completed ? '⭐'.repeat(data.stars || 1) : btn.classList.contains('locked') ? '🔒' : ''}</div>
+                `;
+
+          btn.onclick = () => {
+            if (!btn.classList.contains('locked')) {
+              ensureAudio();
+              startLevel(idx);
+            }
+          };
+
+          grid.appendChild(btn);
+        });
+
+        document.querySelector('#total-progress span').textContent = completedCount + '/18';
+      }
+
+      // ===================== GAME LOGIC =====================
+      function startLevel(levelIndex) {
+        currentLevel = levelIndex;
+        const level = levels[levelIndex];
+
+        document.getElementById('level-title').textContent = `Level ${levelIndex + 1}`;
+        document.getElementById('menu-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        document.getElementById('modal-overlay').classList.remove('active');
+
+        matchedCount = 0;
+        moves = 0;
+        flippedCards = [];
+        isProcessing = false;
+
+        document.getElementById('moves').textContent = '0';
+        document.getElementById('matched').textContent = '0';
+        document.getElementById('match-progress').style.width = '0%';
+
+        // Build cards
+        cards = [];
+        level.pairs.forEach((pair, idx) => {
+          cards.push({ text: pair.kanji, pairId: idx, type: 'kanji' });
+          cards.push({ text: pair.kunyomi, pairId: idx, type: 'kunyomi' });
+        });
+
+        // Shuffle
+        for (let i = cards.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cards[i], cards[j]] = [cards[j], cards[i]];
+        }
+
+        // Render grid
+        const grid = document.getElementById('game-grid');
+        grid.innerHTML = '';
+        cards.forEach((card, idx) => {
+          const el = document.createElement('div');
+          el.className = 'card';
+          el.dataset.index = idx;
+          el.dataset.pairId = card.pairId;
+          el.textContent = card.text;
+          el.style.fontSize = card.text.length > 3 ? 'clamp(0.7rem, 3vw, 1rem)' : 'clamp(0.9rem, 3.5vw, 1.3rem)';
+          el.onclick = () => flipCard(el);
+          grid.appendChild(el);
+        });
+
+        // Timer
+        timeLeft = 50;
+        document.getElementById('timer').textContent = timeLeft;
+        document.getElementById('timer').classList.remove('timer-warning');
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          const timerEl = document.getElementById('timer');
+          timerEl.textContent = timeLeft;
+          if (timeLeft <= 10) timerEl.classList.add('timer-warning');
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            gameOver(false);
+          }
+        }, 1000);
+      }
+
+      function flipCard(el) {
+        if (isProcessing) return;
+        if (el.classList.contains('flipped') || el.classList.contains('matched')) return;
+        if (flippedCards.length >= 2) return;
+
+        playSound('flip');
+        el.classList.add('flipped');
+        flippedCards.push(el);
+
+        if (flippedCards.length === 2) {
+          moves++;
+          document.getElementById('moves').textContent = moves;
+          checkMatch();
+        }
+      }
+
+      function checkMatch() {
+        isProcessing = true;
+        const [c1, c2] = flippedCards;
+
+        if (c1.dataset.pairId === c2.dataset.pairId) {
+          setTimeout(() => {
+            playSound('match');
+            c1.classList.add('matched');
+            c2.classList.add('matched');
+            c1.classList.remove('flipped');
+            c2.classList.remove('flipped');
+            matchedCount++;
+            document.getElementById('matched').textContent = matchedCount;
+            document.getElementById('match-progress').style.width = (matchedCount / 5) * 100 + '%';
+            flippedCards = [];
+            isProcessing = false;
+
+            if (matchedCount === 5) {
+              clearInterval(timerInterval);
+              setTimeout(() => gameOver(true), 500);
+            }
+          }, 300);
+        } else {
+          setTimeout(() => {
+            playSound('wrong');
+            c1.classList.add('wrong');
+            c2.classList.add('wrong');
+          }, 400);
+
+          setTimeout(() => {
+            c1.classList.remove('flipped', 'wrong');
+            c2.classList.remove('flipped', 'wrong');
+            flippedCards = [];
+            isProcessing = false;
+          }, 1000);
+        }
+      }
+
+      function gameOver(won) {
+        const modal = document.getElementById('modal-overlay');
+        const title = document.getElementById('modal-title');
+        const starsEl = document.getElementById('modal-stars');
+        const stats = document.getElementById('modal-stats');
+        const nextBtn = document.getElementById('modal-next-btn');
+
+        modal.classList.add('active');
+
+        if (won) {
+          playSound('win');
+          fireConfetti();
+          title.textContent = 'Level Selesai!';
+          title.className = 'modal-title win';
+
+          // Calculate stars
+          let stars = 1;
+          if (timeLeft >= 30) stars = 3;
+          else if (timeLeft >= 15) stars = 2;
+
+          starsEl.textContent = '⭐'.repeat(stars);
+          stats.innerHTML = `Waktu tersisa: <span>${timeLeft}s</span> | Langkah: <span>${moves}</span>`;
+
+          // Save progress
+          const existing = levelData[currentLevel] || {};
+          if (!existing.completed || (existing.stars || 0) < stars || (existing.bestTime || 0) < timeLeft) {
+            levelData[currentLevel] = {
+              completed: true,
+              stars: Math.max(stars, existing.stars || 0),
+              bestTime: Math.max(timeLeft, existing.bestTime || 0),
+            };
+            saveProgress();
+          }
+
+          if (currentLevel < levels.length - 1) {
+            nextBtn.style.display = 'inline-block';
+            nextBtn.textContent = 'Level Berikutnya';
+          } else {
+            nextBtn.style.display = 'none';
+          }
+        } else {
+          playSound('lose');
+          title.textContent = 'Waktu Habis!';
+          title.className = 'modal-title lose';
+          starsEl.textContent = '💨';
+          stats.innerHTML = `Kamu cocokkan <span>${matchedCount}/5</span> pasangan`;
+          nextBtn.style.display = 'none';
+        }
+      }
+
+      function nextLevel() {
+        document.getElementById('modal-overlay').classList.remove('active');
+        if (currentLevel < levels.length - 1) {
+          startLevel(currentLevel + 1);
+        }
+      }
+
+      function restartLevel() {
+        clearInterval(timerInterval);
+        startLevel(currentLevel);
+      }
+
+      function backToMenu() {
+        clearInterval(timerInterval);
+        document.getElementById('modal-overlay').classList.remove('active');
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('menu-screen').classList.add('active');
+        renderLevelSelect();
+      }
+
+      // ===================== INIT =====================
+      initParticles();
+      renderLevelSelect();
+
+      // Handle resize for confetti
+      window.addEventListener('resize', () => {
+        const canvas = document.getElementById('confetti-canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    </script>
+  </body>
+</html>

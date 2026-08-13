@@ -531,7 +531,7 @@
       <div class="hud">
         <div class="hud-item">
           <div class="hud-label">Waktu</div>
-          <div class="hud-value" id="timer">50</div>
+          <div class="hud-value" id="timer">60</div>
         </div>
         <div class="hud-item">
           <div class="hud-label">Langkah</div>
@@ -715,7 +715,7 @@
       let flippedCards = [];
       let matchedCount = 0;
       let moves = 0;
-      let timeLeft = 50;
+      let timeLeft = 60;
       let timerInterval = null;
       let isProcessing = false;
       let levelData = {}; // { levelIndex: { completed: true, stars: 3, bestTime: 45 } }
@@ -947,7 +947,7 @@
         });
 
         // Timer
-        timeLeft = 50;
+        timeLeft = 60;
         document.getElementById('timer').textContent = timeLeft;
         document.getElementById('timer').classList.remove('timer-warning');
         clearInterval(timerInterval);

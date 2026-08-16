@@ -898,8 +898,8 @@
           <p class="start-desc">Pasangkan Kanji dengan Cara bacanya. Ada 20 level Memory Kanji. Hitung mundur, Jika jawaban BENAR, mendapat tambahan waktu +5.</p>
           <div class="start-instructions">
             <div class="instruction-item"><i class="fas fa-hand-pointer"></i><span>Klik kartunya.</span></div>
-            <div class="instruction-item"><i class="fas fa-link"></i><span>Lihat Cara baca.</span></div>
-            <div class="instruction-item"><i class="fas fa-star"></i><span>Dapatkan Tiga Bintang.</span></div>
+            <div class="instruction-item"><i class="fas fa-link"></i><span>Lihat Cara bacanya.</span></div>
+            <div class="instruction-item"><i class="fas fa-star"></i><span>Dapatkan Bintangnya.</span></div>
           </div>
           <button class="btn-primary" onclick="showScreen('levels')"><i class="fas fa-play"></i> MULAI</button>
         </div>
@@ -990,12 +990,13 @@
             { kanji: '五', kunyomi: 'ご', arti: 'Lima' },
             { kanji: '六', kunyomi: 'ろく', arti: 'Enam' },
             { kanji: '七', kunyomi: 'なな', arti: 'Tujuh' },
+            { kanji: '八', kunyomi: 'はち', arti: 'Delapan' },
             { kanji: '九', kunyomi: 'きゅう', arti: 'Sembilan' },
             { kanji: '十', kunyomi: 'じゅう', arti: 'Sepuluh' },
             { kanji: '百', kunyomi: 'ひゃく', arti: 'Seratus' },
             { kanji: '千', kunyomi: 'せん', arti: 'Seribu' },
             { kanji: '万', kunyomi: 'まん', arti: 'Sepuluh ribu' },
-            { kanji: '八', kunyomi: 'はち', arti: 'Delapan' },
+            
           ],
         },
         {
@@ -1474,7 +1475,10 @@
           container.style.animationDelay = idx * 40 + 'ms';
           container.dataset.index = idx;
           const isKanji = card.type === 'kanji';
-          const fontSize = getCardFontSize(card.text, isKanji);
+          let fontSize = getCardFontSize(card.text, isKanji);
+          if (!isKanji) {
+            fontSize = `calc(${fontSize} * 0.9)`;
+          }
           const label = isKanji ? '漢字' : '読み';
           container.innerHTML = `
                 <div class="card">
